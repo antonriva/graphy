@@ -1,8 +1,8 @@
 # app.py
-from flask import Flask, render_template
+#from flask import Flask, render_template
 import json
 
-app = Flask(__name__)
+#app = Flask(__name__)
 
 def get_adjacency_matrix():
     num_nodes = int(input("Enter the number of nodes: "))
@@ -126,7 +126,6 @@ mst = graph.kruskal_mst()
 print("Edges in the MST:")
 for u, v, w in mst:
     print(f"{u} -- {v} == {w}")
-
 # Convert MST to Binary Tree
 from collections import defaultdict, deque
 
@@ -157,18 +156,23 @@ def mst_to_binary_tree(mst, root):
 root_node = node_names[0]
 binary_tree = mst_to_binary_tree(mst, root_node)
 
+# Print the entire binary tree result
+print("Binary Tree Structure:")
+for node, children in binary_tree.items():
+    print(f"Node: {node}, Children: {children}")
+    
 # Prepare data for D3.js
-def tree_to_json(node, tree, visited=None):
-    if visited is None:
-        visited = set()
-    visited.add(node)
-    children = []
-    for child in tree.get(node, []):
-        if child not in visited:
-            children.append(tree_to_json(child, tree, visited))
-    return {"name": node, "children": children}
+#def tree_to_json(node, tree, visited=None):
+#    if visited is None:
+#        visited = set()
+#    visited.add(node)
+#    children = []
+#    for child in tree.get(node, []):
+#        if child not in visited:
+#            children.append(tree_to_json(child, tree, visited))
+#    return {"name": node, "children": children}
 
-tree_data = tree_to_json(root_node, binary_tree)
+#tree_data = tree_to_json(root_node, binary_tree)
 
 # Perform In-Order Traversal
 def in_order_traversal(node, tree, visited=None, result=None):
@@ -198,9 +202,9 @@ print("In-Order Traversal:")
 print(in_order)
 
 # Define Flask routes
-@app.route('/')
-def index():
-    return render_template('index.html', tree_data=json.dumps(tree_data), in_order=in_order)
+#@app.route('/')
+#def index():
+#    return render_template('index.html', tree_data=json.dumps(tree_data), in_order=in_order)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+#if __name__ == '__main__':
+#    app.run(debug=True)
