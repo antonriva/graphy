@@ -8,70 +8,72 @@
     <link rel="shortcut icon" href="#">
     <link rel="stylesheet" href="./static/css/style.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <title>Graph and Binary Tree Visualizer</title>
+    <title>1540241</title>
 </head>
 
 <body>
     
     <div class="container">
-        <h1>Graph and Binary Tree Visualizer</h1>
+        <h1>Procesamiento de grafos a través de matrices</h1>
+        <h2>Equipo 9, matemáticas discretas</h2>
+        <h2>2024B</h2>
 
         <form id="graphForm">
             <!-- Number of Nodes and Node Names -->
             <div class="input-group">
-                <label for="numNodes">Number of Nodes:</label>
+                <label for="numNodes">Número de nodos:</label>
                 <input type="number" id="numNodes" name="numNodes" required>
             </div>
 
             <div class="input-group">
-                <label for="nodeNames">Node Names (space separated):</label>
+                <label for="nodeNames">Nombre de los nodos (separados por espacio):</label>
                 <input type="text" id="nodeNames" name="nodeNames" required>
             </div>
 
             <!-- Adjacency Matrix -->
             <div class="input-group">
-                <label for="adjacencyMatrix">Adjacency Matrix (space separated rows):</label>
+                <label for="adjacencyMatrix">Matriz de adyacencia (espacio separadas y por filas):</label>
                 <textarea id="adjacencyMatrix" name="adjacencyMatrix" rows="3" required></textarea>
             </div>
 
             <!-- Number of Edges and Edge Names -->
             <div class="input-group">
-                <label for="numEdges">Number of Edges:</label>
+                <label for="numEdges">Número de aristas:</label>
                 <input type="number" id="numEdges" name="numEdges" required>
             </div>
 
             <div class="input-group">
-                <label for="edgeNames">Edge Names (space separated):</label>
+                <label for="edgeNames">Nombre de aristas (separadas por espacio):</label>
                 <input type="text" id="edgeNames" name="edgeNames" required>
             </div>
 
             <!-- Incidence Matrix -->
             <div class="input-group">
-                <label for="incidenceMatrix">Incidence Matrix (space separated rows):</label>
+                <label for="incidenceMatrix">Matriz de incidencia (espacio separadas y por filas):</label>
                 <textarea id="incidenceMatrix" name="incidenceMatrix" rows="3" required></textarea>
             </div>
 
             <!-- Weights for Edges -->
             <div class="input-group">
-                <label for="weights">Weights for Edges (format: edge_name weight, one per line):</label>
+                <label for="weights">Pesos de las aristas (formato: nombre_arista peso, uno por fila):</label>
                 <textarea id="weights" name="weights" rows="3" required></textarea>
             </div>
 
-            <button type="submit" class="btn">Submit</button>
+            <button type="submit" class="btn">Enviar</button>
         </form>
 
         <!-- Results Section -->
         <div id="results">
-            <h2>MST Result:</h2>
+            <h2>Resultado del MST (árbol de expansión mínimo):</h2>
             <pre id="mstResult"></pre>
 
-            <h2>Binary Tree Result:</h2>
+            <h2>Resultado del árbol binario:</h2>
             <pre id="binaryTreeResult"></pre>
 
-            <h2>In order Result:</h2>
+            <h2>Resultado del recorrido inorder (IRD):</h2>
             <pre id="inOrderResult"></pre>
 
-            <h2>Binary Tree Visualization:</h2>
+            <h2>Visualización del árbol binario:</h2>
             <div class="box graph" id="tree"></div>
         </div>
 
