@@ -1,308 +1,222 @@
-// Handle form submission and send data to the Flask backend
+        // Handle form submission and process the graph
+        document.getElementById('graphForm').addEventListener('submit', function (event) {
+            event.preventDefault();
 
-function buildBinaryTreeFromMST(mst, rootValue) {
-    let tree = {};  // This will hold our binary tree
-    let visited = new Set();
+            // Gather input from the form
+            let nodeNames = document.getElementById('nodeNames').value.trim().split(' ');
+            let adjacencyMatrixInput = document.getElementById('adjacencyMatrix').value.trim();
+            let adjacencyMatrix = adjacencyMatrixInput.split('\n').map(row => row.trim().split(' ').map(Number));
+            let numEdges = parseInt(document.getElementById('numEdges').value);
+            let edgeNames = document.getElementById('edgeNames').value.trim().split(' ');
+            let incidenceMatrixInput = document.getElementById('incidenceMatrix').value.trim();
+            let incidenceMatrix = incidenceMatrixInput.split('\n').map(row => row.trim().split(' ').map(Number));
+            let weightsInput = document.getElementById('weights').value.trim();
+            let edgeWeights = weightsInput.split('\n').reduce((acc, line) => {
+                let [edge, weight] = line.trim().split(' ');
+                acc[edge] = parseFloat(weight);
+                return acc;
+            }, {});
 
-    // Initialize the binary tree with the root node
-    tree[rootValue] = { value: rootValue, left: null, right: null };
+            // Prepare data object
+            const data = {
+                nodeNames: nodeNames,
+                adjacencyMatrix: adjacencyMatrix,
+                incidenceMatrix: incidenceMatrix,
+                edgeNames: edgeNames,
+                edgeWeights: edgeWeights
+            };
 
-    // Helper function to insert nodes into the binary tree
-    function insertIntoBinaryTree(parentNode, currentNode) {
-        // If the current node has already been visited, return
-        if (visited.has(currentNode)) return;
-        visited.add(currentNode);
+            // Functions from the previous implementation
 
-        // Initialize the current node if not already present in the binary tree
-        if (!tree[currentNode]) {
-            tree[currentNode] = { value: currentNode, left: null, right: null };
-        }
+            // Function to parse input data
+            function parseInput(data) {
+                const {
+                    nodeNames,
+                    adjacencyMatrix,
+                    incidenceMatrix,
+                    edgeNames,
+                    edgeWeights
+                } = data;
 
-        // Compare values and insert them in the correct position (left if smaller, right if larger)
-        if (parseInt(currentNode) < parseInt(parentNode.value)) {
-            if (!parentNode.left) {
-                parentNode.left = tree[currentNode];
-            } else {
-                insertIntoBinaryTree(parentNode.left, currentNode);
+                // Build nodes
+                const nodes = {};
+                nodeNames.forEach(name => {
+                    nodes[name] = { name, edges: [], left: null, right: null };
+                });
+
+                // Build edges with weights
+                const edges = [];
+                edgeNames.forEach((edgeName, index) => {
+                    const connectedNodes = [];
+                    incidenceMatrix.forEach((row, nodeIndex) => {
+                        if (row[index] === 1) {
+                            connectedNodes.push(nodeNames[nodeIndex]);
+                        }
+                    });
+                    if (connectedNodes.length === 2) {
+                        edges.push({
+                            name: edgeName,
+                            nodes: connectedNodes,
+                            weight: edgeWeights[edgeName]
+                        });
+                    }
+                });
+
+                return { nodes, edges };
             }
-        } else {
-            if (!parentNode.right) {
-                parentNode.right = tree[currentNode];
-            } else {
-                insertIntoBinaryTree(parentNode.right, currentNode);
+
+            // Function to apply Kruskal's algorithm
+            function kruskal(nodes, edges) {
+                // Initialize parent for union-find
+                const parent = {};
+                Object.keys(nodes).forEach(node => {
+                    parent[node] = node;
+                });
+
+                function find(node) {
+                    if (parent[node] !== node) {
+                        parent[node] = find(parent[node]);
+                    }
+                    return parent[node];
+                }
+
+                function union(nodeA, nodeB) {
+                    const rootA = find(nodeA);
+                    const rootB = find(nodeB);
+                    if (rootA !== rootB) {
+                        parent[rootB] = rootA;
+                        return true;
+                    }
+                    return false;
+                }
+
+                // Sort edges by weight
+                edges.sort((a, b) => a.weight - b.weight);
+
+                // Build MST
+                const mstEdges = [];
+                edges.forEach(edge => {
+                    const [nodeA, nodeB] = edge.nodes;
+                    if (union(nodeA, nodeB)) {
+                        mstEdges.push(edge);
+                        // Add edge to node connections
+                        nodes[nodeA].edges.push(nodeB);
+                        nodes[nodeB].edges.push(nodeA);
+                    }
+                });
+
+                return mstEdges;
             }
-        }
-    }
 
-    // Process the MST array to build the binary tree
-    mst.forEach(([node1, node2]) => {
-        insertIntoBinaryTree(tree[rootValue], node1);
-        insertIntoBinaryTree(tree[rootValue], node2);
-    });
+            // Function to convert MST to a binary tree
+// Function to convert MST to a binary tree based on node values
+function mstToBinaryTree(nodes, rootName) {
+    const visited = new Set();
 
-    return tree;
-}
+    function dfs(nodeName) {
+        visited.add(nodeName);
+        const node = nodes[nodeName];
+        const children = node.edges.filter(n => !visited.has(n));
 
-document.getElementById('graphForm').addEventListener('submit', function(event) {
-    event.preventDefault();
+        // Sort the children based on node names (convert to numbers if necessary)
+        children.sort((a, b) => {
+            // Attempt to parse node names as numbers for comparison
+            const aValue = isNaN(a) ? a : parseFloat(a);
+            const bValue = isNaN(b) ? b : parseFloat(b);
 
-    // Gather input from the form
-    let nodeNames = document.getElementById('nodeNames').value.split(' ');
-    let adjacencyMatrix = document.getElementById('adjacencyMatrix').value.split('\n').map(row => row.split(' ').map(Number));
-    let numEdges = document.getElementById('numEdges').value;
-    let edgeNames = document.getElementById('edgeNames').value.split(' ');
-    let incidenceMatrix = document.getElementById('incidenceMatrix').value.split('\n').map(row => row.split(' ').map(Number));
-    let weights = document.getElementById('weights').value.split('\n').reduce((acc, line) => {
-        let [edge, weight] = line.split(' ');
-        acc[edge] = parseFloat(weight);
-        return acc;
-    }, {});
-
-    // Send the data to the backend
-    fetch('/process', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            node_names: nodeNames,
-            adjacency_matrix: adjacencyMatrix,
-            num_edges: numEdges,
-            edge_names: edgeNames,
-            incidence_matrix: incidenceMatrix,
-            weights: weights
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-
-        //const binaryTreeJson = JSON.stringify(data.rootValue, null, 2);
-
-        // First, parse the stringified JSON back into an object
-        //const binaryTreeObject = JSON.parse(binaryTreeJson);
-    
-        // Pass the parsed object to binaryTreeToReadableString
-        //const readableString = binaryTreeToReadableString(binaryTreeObject);
-        // Extract the root_node from the response
-
-        document.getElementById('mstResult').innerText = JSON.stringify(data.mst, null, 2);
-        let mst = data.mst;
-
-        // Get root node and MST from the server response
-        let rootNode = data.root_node;
-        console.log("Root Node:", rootNode);  // Log the root node to the console
-
-        // Build the binary tree from the MST and root node
-        let binaryTree = buildBinaryTreeFromMST(mst, rootNode);
-
-        // Output the binary tree to the console for now
-        console.log("Binary Tree:", binaryTree);
-
-
-        document.getElementById('mstResult').innerText = JSON.stringify(data.mst, null, 2);
-        //document.getElementById('binaryTreeResult').innerText = readableString    
-        //document.getElementById('inOrderResult').innerText = JSON.stringify(data.in_order, null, 2);        
-        
-        // Use the flat array to feed the visualization
-        //let flatTree = data.binary_tree.join(" ");  // Convert the array to a space-separated string
-        //document.getElementById("inp").value = flatTree;  // Set this as the input for the visualization
-
-        //action();  // Call the function to visualize the tree
-    });
-});
-
-// Existing code for tree visualization
-
-const output = document.getElementById("tree");
-
-function getInput() {
-    const value = document.getElementById("inp").value;
-    var arr = value.split(" ")
-    var num = [];
-
-    for (var i = 0; i < arr.length; i++) {
-        if (!isNaN(arr[i]) && arr[i] != "\n") {
-            num.push(arr[i])
-        }
-    }
-    return num;
-}
-
-function action() {
-    getRoot();
-    const el = document.querySelector('#tree');
-    el.onwheel = zoom;
-}
-
-function getRoot() {
-    var result = getInput();
-    var root = createNodes(result);
-    return root;
-}
-
-var tree = document.getElementById("tree");
-var starty, startx, scrleft, scrtop, isdown;
-
-tree.addEventListener('mousedown', e => MouseDown(e));
-tree.addEventListener('mouseup', e => mouseUp(e));
-tree.addEventListener('mouseleave', e => mouseLeave(e));
-tree.addEventListener('mousemove', e => mouseMove(e));
-
-function MouseDown(e) {
-    isdown = true;
-    startx = e.pageX - tree.offsetLeft;
-    starty = e.pageY - tree.offsetTop;
-    scrleft = tree.scrollLeft;
-    scrtop = tree.scrollTop;
-}
-
-function mouseUp(e) {
-    isdown = false;
-}
-
-function mouseLeave(e) {
-    isdown = false;
-}
-
-function mouseMove(e) {
-    if (isdown) {
-        e.preventDefault();
-
-        var y = e.pageY - tree.offsetTop;
-        var goY = y - starty;
-        tree.scrollTop = scrtop - goY;
-
-        var x = e.pageX - tree.offsetLeft;
-        var goX = x - startx;
-        tree.scrollLeft = scrleft - goX;
-    }
-}
-
-let scale = 1;
-
-function zoom(event) {
-    const el = document.querySelector('svg');
-
-    event.preventDefault();
-
-    scale += event.deltaY * -0.001;
-
-    // Restrict scale
-    scale = Math.min(Math.max(.250, scale), 1);
-
-    // Apply scale transform
-    el.style.transform = `scale(${scale})`;
-}
-
-function clear(el) {
-    var allContainers = document.querySelectorAll(".numContainer");
-    var inp = document.getElementById("inp");
-
-    inp.value += '';
-
-    allContainers.forEach(item => {
-        if (item != el) {
-            item.style.transform = "scale(0.9)";
-            item.style.opacity = 0.7;
-        } else {
-            item.style.transform = "scale(1.1)";
-            item.style.opacity = 1;
-        }
-    });
-}
-
-function toggleLock() {
-    var btn = document.querySelector(".btn");
-    var inp = document.getElementById("inp");
-    var btn_click = document.querySelector(".btn-clear");
-    let cont = document.querySelector(".findContainer");
-
-    if (btn.innerHTML == "Lock") {
-        btn.innerHTML = "Unlock";
-        clearAndCreate();
-    } else {
-        cont.innerHTML = '';
-        inp.style.display = "block";
-        btn_click.style.display = "none";
-        btn.innerHTML = "Lock";
-
-        var circles = document.querySelectorAll(".node");
-
-        circles.forEach((circle, i) => {
-            setTimeout(() => {
-                circle.firstChild.classList.remove("green");
-                circle.firstChild.classList.remove("gold");
-                circle.firstChild.classList.remove("gray");
-            }, i * 100);
+            if (aValue < bValue) return -1;
+            if (aValue > bValue) return 1;
+            return 0;
         });
-    }
-}
 
-function clearAndCreate() {
-    var inp = document.getElementById("inp");
-    var btn_click = document.querySelector(".btn-clear");
-    let cont = document.querySelector(".findContainer");
-    document.querySelector(".findContainer").innerHTML = '';
+        if (children.length > 0) {
+            if (children.length > 1) {
+                // Assign left and right children as before
+                node.left = nodes[children[0]];
+                dfs(children[0]);
+                node.right = nodes[children[1]];
+                dfs(children[1]);
+            } else {
+                // Only one child
+                const childName = children[0];
+                // Compare child value to current node value
+                const nodeValue = isNaN(node.name) ? node.name : parseFloat(node.name);
+                const childValue = isNaN(childName) ? childName : parseFloat(childName);
 
-    var result = getInput();
-    result = result.filter(item => item !== '');
-
-    result = [...new Set(result)];
-
-    if (result.length > 0) {
-        inp.style.display = "none";
-        btn_click.style.display = "block";
-    }
-
-    result.forEach((circle) => {
-        var root = getRoot()[0];
-        let el = document.createElement("button");
-        el.classList.add("numContainer");
-        el.innerHTML = circle;
-        el.style.transition = "1s";
-        el.onclick = function () {
-            clear(el);
-            findTheNode(root, el);
-        };
-        cont.appendChild(el);
-    });
-}
-
-function findTheNode(root, node) {
-    var value = parseFloat(node.innerHTML);
-
-    fillToColor(root.value, root.value == value ? "green" : "gold");
-
-    if (root.value == value) return;
-
-    if (root.value > value) {
-        findTheNode(root.left, node);
-        fillTheCircle(root.right, value);
-    } else {
-        findTheNode(root.right, node);
-        fillTheCircle(root.left, value);
-    }
-}
-
-function fillTheCircle(root, value) {
-    if (root == null || root.value == value) return;
-    fillToColor(root.value, "gray");
-
-    fillTheCircle(root.left);
-    fillTheCircle(root.right);
-}
-
-function fillToColor(value, color) {
-    var circles = document.querySelectorAll(".node");
-
-    circles.forEach((circle, i) => {
-        circle.firstChild.classList.remove("green");
-        circle.firstChild.classList.remove("gold");
-        circle.firstChild.classList.remove("gray");
-        if (circle.lastChild.innerHTML === value) {
-            setTimeout(() => {
-                circle.firstChild.classList.add(color);
-            }, i * 100);
+                if (childValue < nodeValue) {
+                    // Assign as left child
+                    node.left = nodes[childName];
+                    dfs(childName);
+                } else {
+                    // Assign as right child
+                    node.right = nodes[childName];
+                    dfs(childName);
+                }
+            }
         }
-    });
+    }
+
+    dfs(rootName);
 }
+
+function convertToVisualTree(node, parent = null) {
+    if (!node) return null;
+
+    // Create a new Node instance as expected by the D3.js code
+    let visualNode = new Node(node.name, null, null, parent);
+
+    // Recursively convert left and right children
+    visualNode.left = convertToVisualTree(node.left, visualNode);
+    visualNode.right = convertToVisualTree(node.right, visualNode);
+
+    // Add children to the children array for D3.js
+    visualNode.children = [];
+    if (visualNode.left) visualNode.children.push(visualNode.left);
+    if (visualNode.right) visualNode.children.push(visualNode.right);
+
+    return visualNode;
+}
+
+
+            // Function to perform in-order traversal
+            function inOrderTraversal(node) {
+                const result = [];
+
+                function traverse(node) {
+                    if (!node) return;
+                    traverse(node.left);
+                    result.push(node.name);
+                    traverse(node.right);
+                }
+
+                traverse(node);
+                return result;
+            }
+
+            // Process the data
+            const { nodes, edges } = parseInput(data);
+            const mstEdges = kruskal(nodes, edges);
+
+            // Output the MST result
+            document.getElementById('mstResult').innerText = JSON.stringify(mstEdges, null, 2);
+
+            // Build the binary tree from the MST
+            let rootNode = nodeNames[0];  // You can choose any node as the root
+            mstToBinaryTree(nodes, rootNode);
+
+            // Output the Binary Tree result
+            function serializeTree(node) {
+                if (!node) return null;
+                return {
+                    name: node.name,
+                    left: serializeTree(node.left),
+                    right: serializeTree(node.right)
+                };
+            }
+            const binaryTreeResult = serializeTree(nodes[rootNode]);
+            document.getElementById('binaryTreeResult').innerText = JSON.stringify(binaryTreeResult, null, 2);
+
+            // Perform in-order traversal
+            const inOrderResult = inOrderTraversal(nodes[rootNode]);
+            document.getElementById('inOrderResult').innerText = inOrderResult.join(', ');
+        });
