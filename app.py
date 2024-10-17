@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 def index():
     return render_template('index.html')
-
+"""
 def get_adjacency_matrix():
     num_nodes = int(input("Enter the number of nodes: "))
     node_names = input("Enter the names of the nodes (separated by spaces): ").split()
@@ -48,6 +48,7 @@ weights = get_weights(edge_names)
 # Map node names to indices
 node_indices = {name: idx for idx, name in enumerate(node_names)}
 idx_to_name = {idx: name for name, idx in node_indices.items()}
+"""
 
 # Implement Kruskal's Algorithm
 class Graph:
