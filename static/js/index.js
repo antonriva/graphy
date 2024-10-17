@@ -73,7 +73,6 @@ function drawBinaryTree(root) {
         .style("stroke-width", "2px");
 }
 
-
 // Function to convert the binary tree to the visual tree structure
 function convertToVisualTree(node) {
     if (!node) return null;
@@ -101,25 +100,21 @@ function convertToVisualTree(node) {
     return visualNode;
 }
 
-// Remove unnecessary functions
-// function createData(node) { ... }
-// function createNodes(list) { ... }
-
 // Handle form submission and process the graph
 document.getElementById('graphForm').addEventListener('submit', function (event) {
     event.preventDefault();
 
     // Gather input from the form
-    let nodeNames = document.getElementById('nodeNames').value.trim().split(' ');
+    let nodeNames = document.getElementById('nodeNames').value.trim().split(/\s+/);
     let adjacencyMatrixInput = document.getElementById('adjacencyMatrix').value.trim();
-    let adjacencyMatrix = adjacencyMatrixInput.split('\n').map(row => row.trim().split(' ').map(Number));
+    let adjacencyMatrix = adjacencyMatrixInput.split('\n').map(row => row.trim().split(/\s+/).map(Number));
     let numEdges = parseInt(document.getElementById('numEdges').value);
-    let edgeNames = document.getElementById('edgeNames').value.trim().split(' ');
+    let edgeNames = document.getElementById('edgeNames').value.trim().split(/\s+/);
     let incidenceMatrixInput = document.getElementById('incidenceMatrix').value.trim();
-    let incidenceMatrix = incidenceMatrixInput.split('\n').map(row => row.trim().split(' ').map(Number));
+    let incidenceMatrix = incidenceMatrixInput.split('\n').map(row => row.trim().split(/\s+/).map(Number));
     let weightsInput = document.getElementById('weights').value.trim();
     let edgeWeights = weightsInput.split('\n').reduce((acc, line) => {
-        let [edge, weight] = line.trim().split(' ');
+        let [edge, weight] = line.trim().split(/\s+/);
         acc[edge] = parseFloat(weight);
         return acc;
     }, {});
@@ -165,6 +160,14 @@ document.getElementById('graphForm').addEventListener('submit', function (event)
                     weight: edgeWeights[edgeName]
                 });
             }
+            // Allow loops (edges connecting a node to itself) if needed
+            else if (connectedNodes.length === 1) {
+                edges.push({
+                    name: edgeName,
+                    nodes: [connectedNodes[0], connectedNodes[0]],
+                    weight: edgeWeights[edgeName]
+                });
+            }
         });
 
         return { nodes, edges };
@@ -180,7 +183,7 @@ document.getElementById('graphForm').addEventListener('submit', function (event)
 
         function find(node) {
             if (parent[node] !== node) {
-                parent[node] = find(parent[node]);
+                parent[node] = find(parent[node]); // Path compression
             }
             return parent[node];
         }
@@ -190,9 +193,9 @@ document.getElementById('graphForm').addEventListener('submit', function (event)
             const rootB = find(nodeB);
             if (rootA !== rootB) {
                 parent[rootB] = rootA;
-                return true;
+                return true; // Union performed
             }
-            return false;
+            return false; // Already connected
         }
 
         // Sort edges by weight
@@ -202,18 +205,20 @@ document.getElementById('graphForm').addEventListener('submit', function (event)
         const mstEdges = [];
         edges.forEach(edge => {
             const [nodeA, nodeB] = edge.nodes;
-            if (union(nodeA, nodeB)) {
+            if (find(nodeA) !== find(nodeB)) {
+                union(nodeA, nodeB);
                 mstEdges.push(edge);
                 // Add edge to node connections
                 nodes[nodeA].edges.push(nodeB);
                 nodes[nodeB].edges.push(nodeA);
             }
+            // Else, edge creates a cycle and is skipped
         });
 
         return mstEdges;
     }
 
-    // Function to convert MST to a binary tree based on node values
+    // Function to convert MST to a binary tree based on node names
     function mstToBinaryTree(nodes, rootName) {
         const visited = new Set();
 
@@ -235,15 +240,24 @@ document.getElementById('graphForm').addEventListener('submit', function (event)
 
             if (children.length > 0) {
                 if (children.length > 1) {
-                    // Assign left and right children as before
+                    // Assign left and right children based on sorted order
                     node.left = nodes[children[0]];
                     dfs(children[0]);
                     node.right = nodes[children[1]];
                     dfs(children[1]);
+
+                    // If more than two children, process the remaining as right children recursively
+                    for (let i = 2; i < children.length; i++) {
+                        let currentNode = node.right;
+                        while (currentNode.right) {
+                            currentNode = currentNode.right;
+                        }
+                        currentNode.right = nodes[children[i]];
+                        dfs(children[i]);
+                    }
                 } else {
                     // Only one child
                     const childName = children[0];
-                    // Compare child value to current node value
                     const nodeValue = isNaN(node.name) ? node.name : parseFloat(node.name);
                     const childValue = isNaN(childName) ? childName : parseFloat(childName);
 
