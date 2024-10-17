@@ -129,7 +129,8 @@ for u, v, w in mst:
 # Convert MST to Binary Tree
 from collections import defaultdict, deque
 
-def mst_to_binary_tree(mst, root):
+# Modified function to construct binary tree with value-based ordering (numbers or letters)
+def mst_to_ordered_binary_tree(mst, root):
     tree = defaultdict(list)
     for u, v, _ in mst:
         tree[u].append(v)
@@ -144,23 +145,33 @@ def mst_to_binary_tree(mst, root):
         if node in visited:
             continue
         visited.add(node)
-        children = [n for n in tree[node] if n != parent]
-        # Limit to 2 children
-        binary_tree[node] = children[:2]
-        for child in binary_tree[node]:
-            queue.append((child, node))
+        
+        # Separate children based on whether they are smaller or larger than the node
+        children = sorted([n for n in tree[node] if n != parent], key=lambda x: x)
+
+        binary_tree[node] = [None, None]  # Initialize left and right as None
+        
+        if len(children) > 0:
+            # The smaller value goes to the left
+            binary_tree[node][0] = children[0]  # Left child
+            queue.append((children[0], node))  # Add to queue for processing
+            
+        if len(children) > 1:
+            # The larger value goes to the right
+            binary_tree[node][1] = children[1]  # Right child
+            queue.append((children[1], node))  # Add to queue for processing
 
     return binary_tree
 
 # Choose a root node arbitrarily
 root_node = node_names[0]
-binary_tree = mst_to_binary_tree(mst, root_node)
+binary_tree = mst_to_ordered_binary_tree(mst, root_node)
 
-# Print the entire binary tree result
-print("Binary Tree Structure:")
+# Print the entire binary tree result with left and right children
+print("Ordered Binary Tree Structure (smaller values on the left, larger values on the right):")
 for node, children in binary_tree.items():
-    print(f"Node: {node}, Children: {children}")
-    
+    print(f"Node: {node}, Left: {children[0]}, Right: {children[1]}")
+
 # Prepare data for D3.js
 #def tree_to_json(node, tree, visited=None):
 #    if visited is None:
@@ -181,19 +192,21 @@ def in_order_traversal(node, tree, visited=None, result=None):
     if result is None:
         result = []
 
-    if node is None or node in visited:
-        return
+    if node is None:
+        return result
 
-    visited.add(node)
-    children = tree.get(node, [])
+    # Traverse the left subtree
+    left_child = tree.get(node, [None, None])[0]
+    if left_child:
+        in_order_traversal(left_child, tree, visited, result)
 
-    if len(children) > 0:
-        in_order_traversal(children[0], tree, visited, result)
-
+    # Visit the node
     result.append(node)
 
-    if len(children) > 1:
-        in_order_traversal(children[1], tree, visited, result)
+    # Traverse the right subtree
+    right_child = tree.get(node, [None, None])[1]
+    if right_child:
+        in_order_traversal(right_child, tree, visited, result)
 
     return result
 
