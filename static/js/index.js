@@ -3,10 +3,21 @@ function drawBinaryTree(root) {
     // Clear any existing SVG elements
     d3.select("#tree").select("svg").remove();
 
-    var margin = { top: 20, right: 90, bottom: 30, left: 90 },
-        width = 800 - margin.left - margin.right,
+    var margin = { top: 40, right: 120, bottom: 20, left: 120 },
+        width = 960 - margin.right - margin.left,
         height = 600 - margin.top - margin.bottom;
 
+    var i = 0;
+
+    // Create a tree layout with specified size
+    var tree = d3.layout.tree()
+        .size([width, height]);
+
+    // Define the diagonal projection for the links (vertical layout)
+    var diagonal = d3.svg.diagonal()
+        .projection(function (d) { return [d.x, d.y]; });
+
+    // Create the SVG container and set up zooming and panning
     var svg = d3.select("#tree").append("svg")
         .attr("width", width + margin.right + margin.left)
         .attr("height", height + margin.top + margin.bottom)
@@ -18,42 +29,43 @@ function drawBinaryTree(root) {
         svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
     }
 
-    var tree = d3.layout.tree().size([height, width]);
-
-    var diagonal = d3.svg.diagonal()
-        .projection(function(d) { return [d.y, d.x]; });
-
+    // Compute the new tree layout
     var nodes = tree.nodes(root),
         links = tree.links(nodes);
 
-    nodes.forEach(function(d) {
-        d.y = d.depth * 100; // Adjust the horizontal spacing between nodes
-    });
+    // Normalize for fixed-depth (vertical spacing between nodes)
+    nodes.forEach(function (d) { d.y = d.depth * 100; });
 
-    var i = 0;
-
+    // Declare the nodes
     var node = svg.selectAll("g.node")
-        .data(nodes, function(d) { return d.id || (d.id = ++i); });
+        .data(nodes, function (d) { return d.id || (d.id = ++i); });
 
+    // Enter the nodes
     var nodeEnter = node.enter().append("g")
         .attr("class", "node")
-        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+        // Position the nodes based on their x and y attributes
+        .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; });
 
+    // Add circles for the nodes
     nodeEnter.append("circle")
         .attr("r", 20)
         .style("fill", "#fff")
         .style("stroke", "steelblue")
         .style("stroke-width", "3px");
 
+    // Add labels for the nodes
     nodeEnter.append("text")
+        .attr("y", -25)
         .attr("dy", ".35em")
         .attr("text-anchor", "middle")
-        .text(function(d) { return d.name; })
+        .text(function (d) { return d.name; })
         .style("font-size", "12px");
 
+    // Declare the links
     var link = svg.selectAll("path.link")
-        .data(links, function(d) { return d.target.id; });
+        .data(links, function (d) { return d.target.id; });
 
+    // Enter the links
     link.enter().insert("path", "g")
         .attr("class", "link")
         .attr("d", diagonal)
