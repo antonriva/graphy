@@ -53,11 +53,10 @@ function drawBinaryTree(root) {
         .style("stroke", "steelblue")
         .style("stroke-width", "3px");
 
-    // Add labels for the nodes
+    // Add labels inside the circles
     nodeEnter.append("text")
-        .attr("y", -25)
-        .attr("dy", ".35em")
-        .attr("text-anchor", "middle")
+        .attr("dy", ".35em") // Center vertically
+        .attr("text-anchor", "middle") // Center horizontally
         .text(function (d) { return d.name; })
         .style("font-size", "12px");
 
@@ -73,6 +72,7 @@ function drawBinaryTree(root) {
         .style("stroke", "#ccc")
         .style("stroke-width", "2px");
 }
+
 
 // Function to convert the binary tree to the visual tree structure
 function convertToVisualTree(node) {
