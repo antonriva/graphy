@@ -1,8 +1,12 @@
 # app.py
-#from flask import Flask, render_template
+from flask import Flask, request, jsonify, render_template
 import json
+from collections import defaultdict, deque
 
-#app = Flask(__name__)
+app = Flask(__name__)
+
+def index():
+    return render_template('index.html')
 
 def get_adjacency_matrix():
     num_nodes = int(input("Enter the number of nodes: "))
