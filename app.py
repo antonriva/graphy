@@ -11,37 +11,93 @@ CORS(app)  # Enable CORS for the Flask app
 def index():
     return render_template('index.html')
 
+
 def mst_to_ordered_binary_tree(mst, root):
     tree = defaultdict(list)
+    
+    # Build the adjacency list from the MST
     for u, v, _ in mst:
         tree[u].append(v)
         tree[v].append(u)
 
     binary_tree = {}
     visited = set()
-    queue = deque([(root, None)])
 
-    while queue:
-        node, parent = queue.popleft()
-        if node in visited:
-            continue
-        visited.add(node)
-
-        children = [n for n in tree[node] if n != parent]
+    # Define a helper function to recursively place nodes in the binary tree
+    def insert_into_binary_tree(parent_node, current_node):
+        if current_node in visited:
+            return
         
-        # Binary tree node should have at most two children (left and right)
-        binary_tree[node] = {
-            "value": node,
-            "left": children[0] if len(children) > 0 else None,
-            "right": children[1] if len(children) > 1 else None
-        }
+        visited.add(current_node)
+        
+        # Initialize the current node in the binary tree if not present
+        if current_node not in binary_tree:
+            binary_tree[current_node] = {"value": current_node, "left": None, "right": None}
+        
+        # Compare values and insert them in the correct position
+        if parent_node is not None:
+            if current_node < parent_node["value"]:
+                if parent_node["left"] is None:
+                    parent_node["left"] = binary_tree[current_node]
+                else:
+                    insert_into_binary_tree(parent_node["left"], current_node)
+            else:
+                if parent_node["right"] is None:
+                    parent_node["right"] = binary_tree[current_node]
+                else:
+                    insert_into_binary_tree(parent_node["right"], current_node)
 
-        if len(children) > 0:
-            queue.append((children[0], node))
-        if len(children) > 1:
-            queue.append((children[1], node))
+    # Start the tree with the root node and add all children
+    queue = deque([root])
+    binary_tree[root] = {"value": root, "left": None, "right": None}
+    while queue:
+        node = queue.popleft()
+
+        for child in tree[node]:
+            if child not in visited:
+                insert_into_binary_tree(binary_tree[node], child)
+                queue.append(child)
 
     return binary_tree
+
+def array_to_string(array):
+    # Initialize an empty string
+    result_string = ""
+    
+    # Iterate over the array and append each value to the result_string
+    for element in array:
+        result_string += str(element) + " "
+    
+    # Return the final string with the trailing space removed
+    return result_string.strip()
+
+
+
+def in_order_traversal(node_value, binary_tree, result=None):
+    if result is None:
+        result = []
+
+    # Check if the node exists in the tree
+    if node_value is None or node_value not in binary_tree:
+        return result
+
+    # Get the current node from the binary tree
+    node = binary_tree[node_value]
+
+    # Recursively traverse the left subtree
+    left_child = node.get("left")
+    if left_child:
+        in_order_traversal(left_child, binary_tree, result)
+
+    # Visit the current node and append its value
+    result.append(node["value"])
+
+    # Recursively traverse the right subtree
+    right_child = node.get("right")
+    if right_child:
+        in_order_traversal(right_child, binary_tree, result)
+
+    return result
 
 
 # Function to process the graph and return the MST and binary tree
@@ -118,26 +174,31 @@ def process():
 
     # Convert the MST result to a binary tree
     root_node = node_names[0]
-    binary_tree = mst_to_ordered_binary_tree(mst, root_node)
+    print(node_names[0])
+    #binary_tree = mst_to_ordered_binary_tree(mst, root_node)
+    #in_order_matrix=in_order_traversal(root_node, binary_tree)
+    #in_order=array_to_string(in_order_matrix)
+
 
     # Prepare the binary tree data for the D3.js visualization
-    def format_tree_for_d3(node, tree):
-        if node is None:
-            return None
-        left_child = tree[node]["left"]
-        right_child = tree[node]["right"]
-        return {
-            "value": node,
-            "left": format_tree_for_d3(left_child, tree) if left_child else None,
-            "right": format_tree_for_d3(right_child, tree) if right_child else None
-        }
+    #def format_tree_for_d3(node, tree):
+        #if node is None:
+        #    return None
+        #left_child = tree[node]["left"]
+        #right_child = tree[node]["right"]
+        #return {
+        #    "value": node,
+       #     "left": format_tree_for_d3(left_child, tree) if left_child else None,
+      #      "right": format_tree_for_d3(right_child, tree) if right_child else None
+     #   }
 
-    d3_tree = format_tree_for_d3(root_node, binary_tree)
+    #d3_tree = format_tree_for_d3(root_node, binary_tree)
 
     return jsonify({
+        'root_node': node_names[0],
         'mst': mst,
-        'binary_tree': d3_tree,
-        'in_order': "Traversal data here"  # Placeholder for the in-order traversal result
+        #'binary_tree': d3_tree,
+        #'in_order': in_order # Placeholder for the in-order traversal result
     })
 
 if __name__ == '__main__':

@@ -83,6 +83,26 @@ body {
     overflow-y: auto;
 }
 
+#binaryTreeResult {
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    height: 100px;
+    overflow-y: auto;
+}
+
+#inOrderResult {
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    height: 100px;
+    overflow-y: auto;
+}
+
+
+
 #tree {
     position: relative;
     width: 100%;

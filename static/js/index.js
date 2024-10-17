@@ -1,4 +1,48 @@
 // Handle form submission and send data to the Flask backend
+
+function buildBinaryTreeFromMST(mst, rootValue) {
+    let tree = {};  // This will hold our binary tree
+    let visited = new Set();
+
+    // Initialize the binary tree with the root node
+    tree[rootValue] = { value: rootValue, left: null, right: null };
+
+    // Helper function to insert nodes into the binary tree
+    function insertIntoBinaryTree(parentNode, currentNode) {
+        // If the current node has already been visited, return
+        if (visited.has(currentNode)) return;
+        visited.add(currentNode);
+
+        // Initialize the current node if not already present in the binary tree
+        if (!tree[currentNode]) {
+            tree[currentNode] = { value: currentNode, left: null, right: null };
+        }
+
+        // Compare values and insert them in the correct position (left if smaller, right if larger)
+        if (parseInt(currentNode) < parseInt(parentNode.value)) {
+            if (!parentNode.left) {
+                parentNode.left = tree[currentNode];
+            } else {
+                insertIntoBinaryTree(parentNode.left, currentNode);
+            }
+        } else {
+            if (!parentNode.right) {
+                parentNode.right = tree[currentNode];
+            } else {
+                insertIntoBinaryTree(parentNode.right, currentNode);
+            }
+        }
+    }
+
+    // Process the MST array to build the binary tree
+    mst.forEach(([node1, node2]) => {
+        insertIntoBinaryTree(tree[rootValue], node1);
+        insertIntoBinaryTree(tree[rootValue], node2);
+    });
+
+    return tree;
+}
+
 document.getElementById('graphForm').addEventListener('submit', function(event) {
     event.preventDefault();
 
@@ -31,14 +75,39 @@ document.getElementById('graphForm').addEventListener('submit', function(event) 
     })
     .then(response => response.json())
     .then(data => {
+
+        //const binaryTreeJson = JSON.stringify(data.rootValue, null, 2);
+
+        // First, parse the stringified JSON back into an object
+        //const binaryTreeObject = JSON.parse(binaryTreeJson);
+    
+        // Pass the parsed object to binaryTreeToReadableString
+        //const readableString = binaryTreeToReadableString(binaryTreeObject);
+        // Extract the root_node from the response
+
         document.getElementById('mstResult').innerText = JSON.stringify(data.mst, null, 2);
-        console.log("Binary Tree Data:", data.binary_tree);  // Log the binary tree data
+        let mst = data.mst;
+
+        // Get root node and MST from the server response
+        let rootNode = data.root_node;
+        console.log("Root Node:", rootNode);  // Log the root node to the console
+
+        // Build the binary tree from the MST and root node
+        let binaryTree = buildBinaryTreeFromMST(mst, rootNode);
+
+        // Output the binary tree to the console for now
+        console.log("Binary Tree:", binaryTree);
+
+
+        document.getElementById('mstResult').innerText = JSON.stringify(data.mst, null, 2);
+        //document.getElementById('binaryTreeResult').innerText = readableString    
+        //document.getElementById('inOrderResult').innerText = JSON.stringify(data.in_order, null, 2);        
         
         // Use the flat array to feed the visualization
-        let flatTree = data.binary_tree.join(" ");  // Convert the array to a space-separated string
-        document.getElementById("inp").value = flatTree;  // Set this as the input for the visualization
+        //let flatTree = data.binary_tree.join(" ");  // Convert the array to a space-separated string
+        //document.getElementById("inp").value = flatTree;  // Set this as the input for the visualization
 
-        action();  // Call the function to visualize the tree
+        //action();  // Call the function to visualize the tree
     });
 });
 
