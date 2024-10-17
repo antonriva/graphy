@@ -9,15 +9,11 @@ function Node(value, left, right, parent = "", children = []) {
 
 }
 
-function createTree(arr) {
-    for (var i = 1; i < arr.length; i++) {
-        nodeDirection(arr[0], arr[i])
-    }
-
-    createData(arr[0]);
+function createTree(rootNode) {
+    createData(rootNode);
     remove();
     try {
-        drawGraph(arr);
+        drawGraph([rootNode]); // Pass the root node as an array
     } catch {
         console.log("No Input");
     }
@@ -50,36 +46,22 @@ function nodeDirection(root, node) {
 
 }
 
-function createData(node) {
 
-    if (node == null) { return }
+function createData(node) {
+    if (node == null) return;
 
     if (node.left) {
         node.children.push(node.left);
         node.left.parent = node;
-        if(!node.right){
-            let newNode = new Node("Empty",null,null)
-            newNode.isRight = true
-            node.children.push(newNode);
-            newNode.parent = node            
-        }
-
     }
 
     if (node.right) {
         node.children.push(node.right);
         node.right.parent = node;
-        if(!node.left){
-            let newNode = new Node("Empty",null,null)
-            newNode.isLeft = true
-            node.children.unshift(newNode);
-            newNode.parent = node
-        }
     }
 
     createData(node.left);
     createData(node.right);
-
 }
 
 function createNodes(list) {
